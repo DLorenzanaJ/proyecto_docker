@@ -20,7 +20,7 @@ jobs:
       - name: Ejecutar comprobaciones con docker build
         run: docker build --check .
 
-  # JOB 2: Validación con docker/bake
+  # JOB 2: Validación con docker/bake (CORREGIDO)
   validate-with-bake:
     runs-on: ubuntu-latest
     steps:
@@ -30,5 +30,22 @@ jobs:
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Verificar archivos
+        run: |
+          echo "Archivos en el directorio actual:"
+          ls -la
+          echo "Buscando docker-bake.hcl:"
+          find . -name "docker-bake.hcl"
+
       - name: Ejecutar comprobaciones con docker bake
-        run: docker buildx bake --call=check --file docker-bake.hcl validate
+        run: |
+          # Si está en la raíz
+          if [ -f docker-bake.hcl ]; then
+            docker buildx bake --call=check --file docker-bake.hcl validate
+          # Si está en .github/workflows/
+          elif [ -f .github/workflows/docker-bake.hcl ]; then
+            docker buildx bake --call=check --file .github/workflows/docker-bake.hcl validate
+          else
+            echo "ERROR: No se encuentra docker-bake.hcl"
+            exit 1
+          fi
